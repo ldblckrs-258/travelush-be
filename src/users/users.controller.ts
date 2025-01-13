@@ -3,40 +3,37 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
-} from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UsersService } from './users.service';
+  Query,
+} from '@nestjs/common'
+import { CreateUserDto } from './dto/create-user.dto'
+import { LoginDto } from './dto/login.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
+import { UsersService } from './users.service'
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post('register')
+  register(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.register(createUserDto)
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Post('login')
+  async login(@Body() loginDto: LoginDto) {
+    const tokens = await this.usersService.login(
+      loginDto.email,
+      loginDto.password,
+    )
+    return tokens
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @Get('list')
+  async getUserList(@Query() query: string) {
+    return this.usersService.getUserList(query)
   }
 }
