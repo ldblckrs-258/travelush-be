@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import * as Joi from 'joi'
 import { LoggerMiddleware } from './middleware/logger.middleware'
 import { UsersModule } from './users/users.module'
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module'
       }),
     }),
     MongooseModule.forRoot(process.env.MONGODB_URI),
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
