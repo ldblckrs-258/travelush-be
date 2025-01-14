@@ -1,14 +1,11 @@
-import { comparePasswords, hashPassword } from '@/helpers/utils'
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import aqp from 'api-query-params'
 
+import { hashPassword } from '@/helpers/utils'
+import fns from 'date-fns'
 import { Model } from 'mongoose'
-import { RegisterDto } from '../auth/dto/register.dto'
+import { v4 as uuidv4 } from 'uuid'
 import { User, UserDocument } from './schemas/user.schema'
 
 @Injectable()
@@ -18,6 +15,28 @@ export class UsersService {
   async isEmailTaken(email: string): Promise<boolean> {
     const user = await this.userModel.exists({ email })
     return user !== null
+  }
+
+  async register(
+    email: string,
+    password: string,
+    name: string,
+  ): Promise<UserDocument> {
+    if (await this.isEmailTaken(email)) {
+      throw new ConflictException('Email is already taken')
+    }
+
+    const hashedPassword = await hashPassword(password)
+    const createdUser = new this.userModel({
+      name: name,
+      email: email,
+      password: hashedPassword,
+      codeId: uuidv4(),
+      codeExpires: fns.addMinutes(new Date(), 10),
+    })
+    createdUser.save()
+
+    return createdUser
   }
 
   async getUserList(query: string) {
@@ -55,13 +74,7 @@ export class UsersService {
     return await this.userModel.findOne({ email })
   }
 
-  async create(
-    email: string,
-    password: string,
-    name: string,
-  ): Promise<UserDocument> {
-    const createdUser = new this.userModel({ name, email, password })
-    createdUser.save()
-    return createdUser.toObject()
+  async findById(id: string) {
+    return await this.userModel.findById(id)
   }
 }

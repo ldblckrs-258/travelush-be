@@ -14,12 +14,16 @@ export enum UserRole {
     transform: (_, ret) => {
       delete ret.password
       delete ret.__v
+      delete ret.codeId
+      delete ret.codeExpires
     },
   },
   toObject: {
     transform: (_, ret) => {
       delete ret.password
       delete ret.__v
+      delete ret.codeId
+      delete ret.codeExpires
     },
   },
 })
