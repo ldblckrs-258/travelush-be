@@ -1,12 +1,13 @@
 import { AppController } from '@/app.controller'
 import { AppService } from '@/app.service'
+import { AuthModule } from '@/auth/auth.module'
+import { HealthModule } from '@/health/health.module'
+import { LoggerMiddleware } from '@/middleware/logger.middleware'
+import { UsersModule } from '@/users/users.module'
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import * as Joi from 'joi'
-import { LoggerMiddleware } from './middleware/logger.middleware'
-import { UsersModule } from './users/users.module'
-import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { HealthModule } from './health/health.module';
     }),
     MongooseModule.forRoot(process.env.MONGODB_URI),
     HealthModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

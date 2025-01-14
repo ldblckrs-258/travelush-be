@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import aqp from 'api-query-params'
-import * as jwt from 'jsonwebtoken'
+
 import { Model } from 'mongoose'
-import { CreateUserDto } from './dto/create-user.dto'
+import { RegisterDto } from '../auth/dto/register.dto'
 import { User, UserDocument } from './schemas/user.schema'
 
 @Injectable()
@@ -18,50 +18,6 @@ export class UsersService {
   async isEmailTaken(email: string): Promise<boolean> {
     const user = await this.userModel.exists({ email })
     return user !== null
-  }
-
-  async register(createUserDto: CreateUserDto) {
-    if (await this.isEmailTaken(createUserDto.email)) {
-      throw new ConflictException('Email is already taken')
-    }
-
-    const hashedPassword = await hashPassword(createUserDto.password)
-    const createdUser = new this.userModel({
-      ...createUserDto,
-      password: hashedPassword,
-    })
-    createdUser.save()
-
-    return createdUser.toObject()
-  }
-
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const user = await this.userModel.findOne({ email }).exec()
-    if (user && (await comparePasswords(password, user.password))) {
-      const accessToken = this.generateAccessToken(user)
-      const refreshToken = this.generateRefreshToken(user)
-      return { accessToken, refreshToken }
-    }
-    throw new UnauthorizedException('Invalid credentials')
-  }
-
-  private generateAccessToken(user: UserDocument): string {
-    return jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'default-secret',
-      { expiresIn: '15m' },
-    )
-  }
-
-  private generateRefreshToken(user: UserDocument): string {
-    return jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
-      { expiresIn: '7d' },
-    )
   }
 
   async getUserList(query: string) {
@@ -93,5 +49,19 @@ export class UsersService {
       totalPages,
       results,
     }
+  }
+
+  async findByEmail(email: string) {
+    return await this.userModel.findOne({ email })
+  }
+
+  async create(
+    email: string,
+    password: string,
+    name: string,
+  ): Promise<UserDocument> {
+    const createdUser = new this.userModel({ name, email, password })
+    createdUser.save()
+    return createdUser.toObject()
   }
 }
