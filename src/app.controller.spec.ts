@@ -15,8 +15,8 @@ describe('AppController', () => {
   })
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!')
+    it('should redirect to /health', (res) => {
+      expect(appController.redirect(res)).toBeUndefined()
     })
   })
 })

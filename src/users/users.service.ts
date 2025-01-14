@@ -1,14 +1,11 @@
-import { comparePasswords, hashPassword } from '@/helpers/utils'
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import aqp from 'api-query-params'
-import * as jwt from 'jsonwebtoken'
+
+import { hashPassword } from '@/helpers/utils'
+import fns from 'date-fns'
 import { Model } from 'mongoose'
-import { CreateUserDto } from './dto/create-user.dto'
+import { v4 as uuidv4 } from 'uuid'
 import { User, UserDocument } from './schemas/user.schema'
 
 @Injectable()
@@ -20,48 +17,26 @@ export class UsersService {
     return user !== null
   }
 
-  async register(createUserDto: CreateUserDto) {
-    if (await this.isEmailTaken(createUserDto.email)) {
+  async register(
+    email: string,
+    password: string,
+    name: string,
+  ): Promise<UserDocument> {
+    if (await this.isEmailTaken(email)) {
       throw new ConflictException('Email is already taken')
     }
 
-    const hashedPassword = await hashPassword(createUserDto.password)
+    const hashedPassword = await hashPassword(password)
     const createdUser = new this.userModel({
-      ...createUserDto,
+      name: name,
+      email: email,
       password: hashedPassword,
+      codeId: uuidv4(),
+      codeExpires: fns.addMinutes(new Date(), 10),
     })
     createdUser.save()
 
-    return createdUser.toObject()
-  }
-
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const user = await this.userModel.findOne({ email }).exec()
-    if (user && (await comparePasswords(password, user.password))) {
-      const accessToken = this.generateAccessToken(user)
-      const refreshToken = this.generateRefreshToken(user)
-      return { accessToken, refreshToken }
-    }
-    throw new UnauthorizedException('Invalid credentials')
-  }
-
-  private generateAccessToken(user: UserDocument): string {
-    return jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'default-secret',
-      { expiresIn: '15m' },
-    )
-  }
-
-  private generateRefreshToken(user: UserDocument): string {
-    return jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_REFRESH_SECRET || 'default-refresh-secret',
-      { expiresIn: '7d' },
-    )
+    return createdUser
   }
 
   async getUserList(query: string) {
@@ -93,5 +68,13 @@ export class UsersService {
       totalPages,
       results,
     }
+  }
+
+  async findByEmail(email: string) {
+    return await this.userModel.findOne({ email })
+  }
+
+  async findById(id: string) {
+    return await this.userModel.findById(id)
   }
 }
