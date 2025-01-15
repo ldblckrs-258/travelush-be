@@ -17,6 +17,13 @@ export class UsersService {
     return user !== null
   }
 
+  createCode(): { codeId: string; codeExpires: Date } {
+    return {
+      codeId: uuidv4(),
+      codeExpires: fns.addMinutes(new Date(), 10),
+    }
+  }
+
   async register(
     email: string,
     password: string,
@@ -27,16 +34,26 @@ export class UsersService {
     }
 
     const hashedPassword = await hashPassword(password)
+    const { codeId, codeExpires } = this.createCode()
     const createdUser = new this.userModel({
       name: name,
       email: email,
       password: hashedPassword,
-      codeId: uuidv4(),
-      codeExpires: fns.addMinutes(new Date(), 10),
+      codeId: codeId,
+      codeExpires: codeExpires,
     })
     createdUser.save()
 
     return createdUser
+  }
+
+  async refreshCode(userId: string) {
+    const { codeId, codeExpires } = this.createCode()
+    const user = await this.userModel.findById(userId)
+    user.codeId = codeId
+    user.codeExpires = codeExpires
+    user.save()
+    return user
   }
 
   async getUserList(query: string) {

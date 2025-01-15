@@ -21,16 +21,11 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
-    private readonly mailerService: MailerService,
-    private readonly configService: ConfigService,
   ) {}
 
   @Public()
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    const webUrl =
-      this.configService.get<string>('WEB_URL') ||
-      `http://localhost:${this.configService.get<string>('FE_PORT')}`
     const user = await this.usersService.register(
       registerDto.email,
       registerDto.password,
@@ -38,17 +33,37 @@ export class AuthController {
     )
 
     if (user) {
-      this.mailerService.sendMail({
-        to: user.email,
-        subject: 'Active your account at Travelush',
-        template: 'register',
-        context: {
-          name: user.name,
-          URL: `${webUrl}/active/${user._id}?code=${user.codeId}`,
-        },
-      })
+      this.authService.sendVerificationEmail(
+        user._id,
+        user.email,
+        user.name,
+        user.codeId,
+      )
     }
     return user
+  }
+
+  @Get('refresh-code')
+  async resendCode(@Request() req: any) {
+    const user = await this.usersService.refreshCode(req.user._id)
+    if (user) {
+      this.authService.sendVerificationEmail(
+        user._id,
+        user.email,
+        user.name,
+        user.codeId,
+      )
+    }
+
+    return { message: 'Verification code has been sent successfully' }
+  }
+
+  @Public()
+  @Get('active/:userId')
+  async verifyAccount(@Request() req: any) {
+    await this.authService.verifyAccount(req.params.userId, req.query.codeId)
+
+    return { message: 'Account has been verified successfully' }
   }
 
   @Public()

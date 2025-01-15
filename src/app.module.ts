@@ -11,6 +11,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import * as Joi from 'joi'
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard'
+import { TransformInterceptor } from './core/transform.interceptor'
 
 @Module({
   imports: [
@@ -70,6 +71,10 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard'
     {
       provide: 'APP_GUARD',
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: 'APP_INTERCEPTOR',
+      useClass: TransformInterceptor,
     },
   ],
 })
