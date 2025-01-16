@@ -1,17 +1,15 @@
+import { ResponseMessage } from '@/decorator/format.annotation'
 import { Public } from '@/decorator/privacy.annotation'
 import { UsersService } from '@/users/users.service'
-import { MailerService } from '@nestjs-modules/mailer'
 import {
   Body,
   Controller,
   Get,
-  Logger,
   Post,
   Request,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { AuthService } from './auth.service'
 import { RegisterDto } from './dto/register.dto'
 import { LocalAuthGuard } from './passport/local-auth.guard'
@@ -69,6 +67,7 @@ export class AuthController {
   @Public()
   @UseGuards(LocalAuthGuard)
   @Post('login')
+  @ResponseMessage('Login successfully')
   async login(@Request() req: any) {
     return this.authService.login(req.user)
   }

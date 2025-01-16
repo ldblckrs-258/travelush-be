@@ -48,8 +48,17 @@ export class UsersService {
   }
 
   async refreshCode(userId: string) {
-    const { codeId, codeExpires } = this.createCode()
     const user = await this.userModel.findById(userId)
+
+    if (!user) {
+      throw new ConflictException('User not found')
+    }
+
+    if (user.isVerified) {
+      throw new ConflictException('User is already verified')
+    }
+
+    const { codeId, codeExpires } = this.createCode()
     user.codeId = codeId
     user.codeExpires = codeExpires
     user.save()

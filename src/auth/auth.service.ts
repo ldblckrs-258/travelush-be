@@ -2,7 +2,11 @@ import { comparePasswords } from '@/helpers/utils'
 import { UserDocument } from '@/users/schemas/user.schema'
 import { UsersService } from '@/users/users.service'
 import { MailerService } from '@nestjs-modules/mailer'
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Types } from 'mongoose'
@@ -20,7 +24,7 @@ export class AuthService {
     const payload = { email: user.email, sub: user._id }
     return {
       access_token: this.jwtService.sign(payload),
-      user: user.toJSON(),
+      ...user.toJSON(),
     }
   }
 
@@ -31,6 +35,9 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email)
     if (user) {
       if (await comparePasswords(password, user.password)) {
+        if (!user.isVerified) {
+          throw new ForbiddenException('Account is not verified')
+        }
         return user
       } else {
         throw new UnauthorizedException('Password is incorrect')

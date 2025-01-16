@@ -16,6 +16,8 @@ export enum UserRole {
       delete ret.__v
       delete ret.codeId
       delete ret.codeExpires
+      delete ret.createdAt
+      delete ret.updatedAt
     },
   },
   toObject: {
@@ -24,6 +26,8 @@ export enum UserRole {
       delete ret.__v
       delete ret.codeId
       delete ret.codeExpires
+      delete ret.createdAt
+      delete ret.updatedAt
     },
   },
 })
