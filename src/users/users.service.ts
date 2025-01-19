@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import aqp from 'api-query-params'
 
@@ -47,15 +51,20 @@ export class UsersService {
     return createdUser
   }
 
-  async refreshCode(userId: string) {
-    const user = await this.userModel.findById(userId)
+  async refreshCode(email: string) {
+    const user = await this.userModel.findOne({ email })
 
     if (!user) {
-      throw new ConflictException('User not found')
+      throw new BadRequestException('This email is not registered')
     }
 
     if (user.isVerified) {
       throw new ConflictException('User is already verified')
+    }
+
+    // check if codeExpires more than 9 minutes, then return exception
+    if (fns.isAfter(user.codeExpires, fns.addMinutes(new Date(), 9))) {
+      throw new BadRequestException('You should not spam the code')
     }
 
     const { codeId, codeExpires } = this.createCode()

@@ -41,7 +41,7 @@ export class User {
   @Prop()
   password: string
 
-  @Prop({ default: '/default-avatar.png' })
+  @Prop({ default: '/png/avatar.png' })
   avatar: string
 
   @Prop({ default: UserRole.USER })

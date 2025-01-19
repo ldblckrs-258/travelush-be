@@ -2,15 +2,19 @@ import { ResponseMessage } from '@/decorator/format.annotation'
 import { Public } from '@/decorator/privacy.annotation'
 import { UsersService } from '@/users/users.service'
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
+  Param,
   Post,
+  Query,
   Request,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
 import { AuthService } from './auth.service'
+import { ActiveDto } from './dto/active.dto'
 import { RegisterDto } from './dto/register.dto'
 import { LocalAuthGuard } from './passport/local-auth.guard'
 
@@ -41,9 +45,15 @@ export class AuthController {
     return user
   }
 
+  @Public()
+  @ResponseMessage('Code has been sent to your email')
   @Get('refresh-code')
-  async resendCode(@Request() req: any) {
-    const user = await this.usersService.refreshCode(req.user._id)
+  async resendCode(@Query() query: any) {
+    const email = query.email
+    if (!email) {
+      throw new BadRequestException('Email is required')
+    }
+    const user = await this.usersService.refreshCode(email)
     if (user) {
       this.authService.sendVerificationEmail(
         user._id,
@@ -52,16 +62,13 @@ export class AuthController {
         user.codeId,
       )
     }
-
-    return { message: 'Verification code has been sent successfully' }
   }
 
   @Public()
-  @Get('active/:userId')
-  async verifyAccount(@Request() req: any) {
-    await this.authService.verifyAccount(req.params.userId, req.query.codeId)
-
-    return { message: 'Account has been verified successfully' }
+  @ResponseMessage('Account has been verified successfully')
+  @Post('active')
+  async verifyAccount(@Body() activeDto: ActiveDto) {
+    await this.authService.verifyAccount(activeDto.id, activeDto.code)
   }
 
   @Public()
